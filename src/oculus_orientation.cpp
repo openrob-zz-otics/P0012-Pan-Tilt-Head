@@ -1,7 +1,7 @@
 // oculus_orientation.cpp : Defines the entry point for the console application.
 //
 
-#include "stdafx.h"
+//#include "C:\Users\User\Documents\Visual Studio 2013\Projects\oculus_orientation\oculus_orientation\stdafx.h"
 #include <iostream>
 #include <iomanip>
 #include <OVR_CAPI.h>
