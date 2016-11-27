@@ -49,7 +49,7 @@
 #include <stdio.h>
 #include <iostream>
 
-#include "dynamixel_sdk.h"                                  // Uses Dynamixel SDK library
+#include <dynamixel_sdk.h>                                  // Uses Dynamixel SDK library
 
 // Control table address
 #define ADDR_MX_TORQUE_ENABLE           24                  // Control table address is different in Dynamixel model
@@ -149,7 +149,7 @@ int main()
   {
     printf("Failed to open the port!\n");
     printf("Press any key to terminate...\n");
-    getch();
+    _getch();
     return 0;
   }
 
@@ -162,7 +162,7 @@ int main()
   {
     printf("Failed to change the baudrate!\n");
     printf("Press any key to terminate...\n");
-    getch();
+    _getch();
     return 0;
   }
 
@@ -184,7 +184,7 @@ int main()
   while(1)
   {
     printf("Press any key to continue! (or press ESC to quit!)\n");
-    if (getch() == ESC_ASCII_VALUE)
+    if (_getch() == ESC_ASCII_VALUE)
       break;
 
     // Write goal position
