@@ -12,75 +12,116 @@
 
 using namespace std;
 
-int main()
-{   // Initialize our session with the Oculus HMD.
+class OculusRift{
+    
+    private:
+    
+        ovrResult initialized;
+        ovrTrackingState ts;
+        ovrSession session;
+        
+        bool initOVR(){
+            
+            if (ovr_Initialize(nullptr) == ovrSuccess)
+            {
+                session = nullptr;
+                ovrGraphicsLuid luid;
+                initialized = ovr_Create(&session, &luid);
+                return true;
+            }
+            return false;
+            
+        }
+        
+        bool closeOVR(){
+            
+            ovr_Destroy(session);
+                
+            ovr_Shutdown();
+            
+            return true;
+            // If we've fallen through to this point, the HMD is no longer
+            // connected.
+        }
+    
+    public:
+        
+        double orientX, orientY, orientZ;
+    
+        OculusRift(){
+            
+            initOVR();
+        }
+        
+        ~OculusRift(){
+            
+            closeOVR();
+        }
 
-	int count = 0;
-	double x_sum = 0.0;
-	double y_sum = 0.0;
-	double z_sum = 0.0;
-	double max_count = 100000.0;
-	double sum = 0;
+        void OVRread()
+        {   // Initialize our session with the Oculus HMD.
 
-	if (ovr_Initialize(nullptr) == ovrSuccess)
-	{
-		ovrSession session = nullptr;
-		ovrGraphicsLuid luid;
-		ovrResult result = ovr_Create(&session, &luid);
+            
+            int count = 0;
+            double x_sum = 0.0;
+            double y_sum = 0.0;
+            double z_sum = 0.0;
+            
+            double max_count = 100000.0;
+            double sum = 0;
+            
+                if (initialized == ovrSuccess)
+                {   // Then we're connected to an HMD!
 
-		if (result == ovrSuccess)
-		{   // Then we're connected to an HMD!
+                    // Let's take a look at some orientation data.
+                
+                    while (count < max_count)
+                    {
+                        //cout << "success";
+                        //this_thread::sleep_for(chrono::seconds(1));
+                        Sleep(150);
 
-			// Let's take a look at some orientation data.
-			ovrTrackingState ts;
+                        ts = ovr_GetTrackingState(session, 0, true);
 
-			while (true)
-			{
-				//cout << "success";
-				//this_thread::sleep_for(chrono::seconds(1));
-				Sleep(150);
+                        ovrPoseStatef tempHeadPose = ts.HeadPose;
+                        ovrPosef tempPose = tempHeadPose.ThePose;
+                        ovrQuatf tempOrient = tempPose.Orientation;
 
-				ts = ovr_GetTrackingState(session, 0, true);
+                        /*
+                        cout << "Orientation (x,y,z):  " << COLW << tempOrient.x << ","
+                        << COLW << tempOrient.y << "," << COLW << tempOrient.z
+                        << endl;
+                        */
 
-				ovrPoseStatef tempHeadPose = ts.HeadPose;
-				ovrPosef tempPose = tempHeadPose.ThePose;
-				ovrQuatf tempOrient = tempPose.Orientation;
+                        // Wait a bit to let us actually read stuff.
+                        //std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                        
+                        x_sum = x_sum + tempOrient.x;
+                        y_sum = y_sum + tempOrient.y;
+                        z_sum = z_sum + tempOrient.z;
+                        count++;
+                        
+                        
+                        /*
+                        cout << "Orientation (x,y,z):  " << COLW << tempOrient.x << ","
+                             << COLW << tempOrient.y << "," << COLW << tempOrient.z
+                            << endl;
+                        */
+                    }
+                    
+                    orientX = x_sum / max_count;
+                    orientY = y_sum / max_count;
+                    orientZ = z_sum / max_count;
+                    
+                    cout << "Orientation (x,y,z):  " << COLW << orientX << ","
+                    << COLW << orientY << "," << COLW << orientZ
+                    << endl;
+                            
+                }
+                
+        }
 
-				/*
-				cout << "Orientation (x,y,z):  " << COLW << tempOrient.x << ","
-				<< COLW << tempOrient.y << "," << COLW << tempOrient.z
-				<< endl;
-				*/
-
-				// Wait a bit to let us actually read stuff.
-				//std::this_thread::sleep_for(std::chrono::milliseconds(100));
-				/*
-				count++;
-				x_sum = x_sum + tempOrient.x;
-				y_sum = y_sum + tempOrient.y;
-				z_sum = z_sum + tempOrient.z;
-				//if (count == max_count) {
-					cout << "Orientation (x,y,z):  " << COLW << x_sum / max_count << ","
-						<< COLW << y_sum / max_count << "," << COLW << z_sum / max_count
-						<< endl;
-					count = 0;
-					x_sum = 0.0;
-					y_sum = 0.0;
-					z_sum = 0.0;
-				//}
-				*/
-				cout << "Orientation (x,y,z):  " << COLW << tempOrient.x << ","
-					 << COLW << tempOrient.y << "," << COLW << tempOrient.z
-					<< endl;
-			}
-
-			ovr_Destroy(session);
-		}
-		ovr_Shutdown();
-		// If we've fallen through to this point, the HMD is no longer
-		// connected.
-	}
-
-	return 0;
 }
+			
+
 

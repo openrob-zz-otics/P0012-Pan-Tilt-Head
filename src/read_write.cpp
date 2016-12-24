@@ -45,11 +45,14 @@
 #include <conio.h>
 #endif
 
+//include file for reading from oculus
+#include "oculus_orientation.cpp"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <iostream>
 
-#include <dynamixel_sdk.h>                                  // Uses Dynamixel SDK library
+//#include <dynamixel_sdk.h>                                  // Uses Dynamixel SDK library
 
 // Control table address
 #define ADDR_MX_TORQUE_ENABLE           24                  // Control table address is different in Dynamixel model
@@ -132,6 +135,9 @@ int main()
   // Set the protocol version
   // Get methods and members of Protocol1PacketHandler or Protocol2PacketHandler
   dynamixel::PacketHandler *packetHandler = dynamixel::PacketHandler::getPacketHandler(PROTOCOL_VERSION);
+  
+  //create OculusRift instance and initialize it
+  OculusRift OVR;
 
   int index = 0;
   int dxl_comm_result = COMM_TX_FAIL;             // Communication result
@@ -183,6 +189,13 @@ int main()
 
   while(1)
   {
+      
+    //TODO: read from oculus, convert int [] values to two angle values, 
+    //      use daisy chaining to write goal positions to both servos
+    OVR.OVRread();
+    
+    
+    
     printf("Press any key to continue! (or press ESC to quit!)\n");
     if (_getch() == ESC_ASCII_VALUE)
       break;
