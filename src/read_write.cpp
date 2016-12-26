@@ -46,13 +46,13 @@
 #endif
 
 //include file for reading from oculus
-#include "oculus_orientation.cpp"
+#include "header_files\OculusRiftSensor.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <iostream>
 
-//#include <dynamixel_sdk.h>                                  // Uses Dynamixel SDK library
+#include <dynamixel_sdk.h>                                  // Uses Dynamixel SDK library
 
 // Control table address
 #define ADDR_MX_TORQUE_ENABLE           24                  // Control table address is different in Dynamixel model
@@ -72,6 +72,7 @@
 #define TORQUE_DISABLE                  0                   // Value for disabling the torque
 #define DXL_MINIMUM_POSITION_VALUE      0                 // Dynamixel will rotate between this value
 #define DXL_MAXIMUM_POSITION_VALUE      1023              // and this value (note that the Dynamixel would not move when the position value is out of movable range. Check e-manual about the range of the Dynamixel you use.)
+#define DXL_POSITION_TO_ANGLE_RATIO		300
 #define DXL_MOVING_STATUS_THRESHOLD     10                  // Dynamixel moving status threshold
 
 #define ESC_ASCII_VALUE                 0x1b
@@ -124,6 +125,26 @@ int kbhit(void)
 #endif
 }
 
+/**
+
+TODO: Refactor the following methods into a seperate class file for the dynamixel
+
+void initDxl();
+
+void openDxlPort();
+
+void setDxlBaudRate();
+
+void enableDxlTorque(int baudrate);
+
+void writeDxlPosition(int goalPosition);
+
+void readDxlPosition();
+**/
+
+int angleToDxlPosition(double angle);
+
+
 int main()
 {
   // Initialize PortHandler instance
@@ -136,12 +157,13 @@ int main()
   // Get methods and members of Protocol1PacketHandler or Protocol2PacketHandler
   dynamixel::PacketHandler *packetHandler = dynamixel::PacketHandler::getPacketHandler(PROTOCOL_VERSION);
   
-  //create OculusRift instance and initialize it
-  OculusRift OVR;
+  //create OculusRiftSensor instance and initialize it
+  OculusRiftSensor OVR;
 
   int index = 0;
   int dxl_comm_result = COMM_TX_FAIL;             // Communication result
-  int dxl_goal_position[2] = {DXL_MINIMUM_POSITION_VALUE, DXL_MAXIMUM_POSITION_VALUE};         // Goal position
+  int dxl_goal_position;
+  //int dxl_goal_position[2] = {DXL_MINIMUM_POSITION_VALUE, DXL_MAXIMUM_POSITION_VALUE};         // Goal position
 
   uint8_t dxl_error = 0;                          // Dynamixel error
   uint16_t dxl_present_position = 0;              // Present position
@@ -190,18 +212,24 @@ int main()
   while(1)
   {
       
-    //TODO: read from oculus, convert int [] values to two angle values, 
-    //      use daisy chaining to write goal positions to both servos
+    //wait 3 seconds before writing a new value to the dynamixel 
+	Sleep(3000);
     OVR.OVRread();
+
+	//TODO: read from oculus, convert int [] values to two angle values, 
+	//      use daisy chaining to write goal positions to both servos
+
+	//currently we only have one servo, convert the yaw value to a position value and write it to the servo
+	dxl_goal_position = angleToDxlPosition(OVR.angleY);
     
-    
-    
+	/**
     printf("Press any key to continue! (or press ESC to quit!)\n");
     if (_getch() == ESC_ASCII_VALUE)
       break;
+	  **/
 
     // Write goal position
-    dxl_comm_result = packetHandler->write2ByteTxRx(portHandler, DXL_ID, ADDR_MX_GOAL_POSITION, dxl_goal_position[index], &dxl_error);
+    dxl_comm_result = packetHandler->write2ByteTxRx(portHandler, DXL_ID, ADDR_MX_GOAL_POSITION, dxl_goal_position, &dxl_error);
     if (dxl_comm_result != COMM_SUCCESS)
     {
       packetHandler->printTxRxResult(dxl_comm_result);
@@ -225,11 +253,14 @@ int main()
         packetHandler->printRxPacketError(dxl_error);
       }
 
-      printf("[ID:%03d] GoalPos:%03d  PresPos:%03d\n", DXL_ID, dxl_goal_position[index], dxl_present_position);
+      printf("[ID:%03d] GoalPos:%03d  PresPos:%03d\n", DXL_ID, dxl_goal_position, dxl_present_position);
 
-    }while((abs(dxl_goal_position[index] - dxl_present_position) > DXL_MOVING_STATUS_THRESHOLD));
+    }while((abs(dxl_goal_position - dxl_present_position) > DXL_MOVING_STATUS_THRESHOLD));
 
     // Change goal position
+
+
+	/**
     if (index == 0)
     {
       index = 1;
@@ -238,6 +269,8 @@ int main()
     {
       index = 0;
     }
+	**/
+
   }
 
   // Disable Dynamixel Torque
@@ -255,4 +288,31 @@ int main()
   portHandler->closePort();
 
   return 0;
+}
+
+/**
+	Function for calculating the position value to write to the dynamixel based on the angle of interest for the 
+	oculus rift
+
+	TODO this will likely need to be improved
+
+	@param angle 
+				an angle value between -90 and 90 degrees
+	@return 
+			returns the position value to write to the dynamixel servo
+**/
+int angleToDxlPosition(double angle){
+
+	//if angle is negative then subtract the computed position value from the maximum dxl_position value
+	if (angle < 0){
+		return (int)
+			(DXL_MAXIMUM_POSITION_VALUE -
+			(abs(angle) * (DXL_MAXIMUM_POSITION_VALUE / DXL_POSITION_TO_ANGLE_RATIO)));
+
+	}
+	//otherwise simply multiply angle by conversion ratio
+	else{
+		return (int)(angle * (DXL_MAXIMUM_POSITION_VALUE / DXL_POSITION_TO_ANGLE_RATIO));
+
+	}
 }
