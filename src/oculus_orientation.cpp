@@ -39,19 +39,19 @@ bool OculusRiftSensor::closeOVR(){
 
 double OculusRiftSensor::yawToAngle(double yaw){
 	
-	return (yaw / 0.40)*90.0;
+	return (yaw / 0.50)*90.0;
 	
 }
 
 double OculusRiftSensor::pitchToAngle(double pitch){
 
-	return(pitch / 0.40)*90.0;
+	return(pitch / 0.50)*90.0;
 
 }
 
 double OculusRiftSensor::rollToAngle(double roll){
 
-	return (roll / 0.40)*9.0;
+	return (roll / 0.50)*9.0;
 
 }
 
@@ -70,12 +70,12 @@ void OculusRiftSensor::OVRread(){
 	// Initialize our session with the Oculus HMD.
 
 
-	int count = 0;
+	double count = 0;
 	double x_sum = 0.0;
 	double y_sum = 0.0;
 	double z_sum = 0.0;
 
-	double max_count = 100000.0;
+	double max_count = 100000;
 	double sum = 0;
 
 	double yaw = 0;
@@ -91,7 +91,6 @@ void OculusRiftSensor::OVRread(){
 		{
 			//cout << "success";
 			//this_thread::sleep_for(chrono::seconds(1));
-			Sleep(100);
 
 			_ts = ovr_GetTrackingState(_session, 0, true);
 
