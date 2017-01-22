@@ -59,13 +59,20 @@
 #define ADDR_MX_GOAL_POSITION           30
 #define ADDR_MX_PRESENT_POSITION        36
 
+#define ADDR_MX_TORQUE_LIMIT_HIGH          35
+#define ADDR_MX_TORQUE_LIMIT_LOW           34
+
+//
+#define ADDR_MX_MAX_TORQUE_HIGH         15
+#define ADDR_MX_MAX_TORQUE_LOW          14
+
 // Protocol version
 #define PROTOCOL_VERSION                1.0                 // See which protocol version is used in the Dynamixel
 
 // Default setting
 #define DXL_ID                          1                   // Dynamixel ID: 1
 #define BAUDRATE                        57142
-#define DEVICENAME                      "COM5"				// Check which port is being used on your controller
+#define DEVICENAME                      "COM4"				// Check which port is being used on your controller
                                                             // ex) Windows: "COM1"   Linux: "/dev/ttyUSB0"
 
 #define TORQUE_ENABLE                   1                   // Value for enabling the torque
@@ -76,6 +83,7 @@
 #define DXL_MOVING_STATUS_THRESHOLD     10                  // Dynamixel moving status threshold
 
 #define ESC_ASCII_VALUE                 0x1b
+#define DXL_INIT_POSITION               512
 
 int getch()
 {
@@ -125,11 +133,13 @@ int kbhit(void)
 #endif
 }
 
-/**
 
-TODO: Refactor the following methods into a seperate class file for the dynamixel
+
+//TODO: Refactor the following methods into a seperate class file for the dynamixel
 
 void initDxl();
+
+/**
 
 void openDxlPort();
 
@@ -160,10 +170,15 @@ int main()
   //create OculusRiftSensor instance and initialize it
   OculusRiftSensor OVR;
 
+  //initial angle value for the head set when user looking straight ahead
+  double initOVRAngleY;
+
   int index = 0;
   int dxl_comm_result = COMM_TX_FAIL;             // Communication result
   int dxl_goal_position;
   //int dxl_goal_position[2] = {DXL_MINIMUM_POSITION_VALUE, DXL_MAXIMUM_POSITION_VALUE};         // Goal position
+
+  int torque_max_high;
 
   uint8_t dxl_error = 0;                          // Dynamixel error
   uint16_t dxl_present_position = 0;              // Present position
@@ -194,8 +209,23 @@ int main()
     return 0;
   }
 
+  dxl_comm_result = packetHandler->write2ByteTxRx(portHandler, DXL_ID, ADDR_MX_TORQUE_LIMIT_LOW, 0x200, &dxl_error);
+  if (dxl_comm_result != COMM_SUCCESS)
+  {
+	  packetHandler->printTxRxResult(dxl_comm_result);
+  }
+  else if (dxl_error != 0)
+  {
+	  packetHandler->printRxPacketError(dxl_error);
+  }
+  else
+  {
+	  printf("Dynamixel max. torque has been successfully changed \n");
+  }
+
   // Enable Dynamixel Torque
   dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, DXL_ID, ADDR_MX_TORQUE_ENABLE, TORQUE_ENABLE, &dxl_error);
+  
   if (dxl_comm_result != COMM_SUCCESS)
   {
     packetHandler->printTxRxResult(dxl_comm_result);
@@ -209,69 +239,74 @@ int main()
     printf("Dynamixel has been successfully connected \n");
   }
 
+  
+  // initialize dynamixel position
+  dxl_comm_result = packetHandler->write2ByteTxRx(portHandler, DXL_ID, ADDR_MX_GOAL_POSITION, DXL_INIT_POSITION, &dxl_error);
+  if (dxl_comm_result != COMM_SUCCESS)
+  {
+	  packetHandler->printTxRxResult(dxl_comm_result);
+  }
+  else if (dxl_error != 0)
+  {
+	  std::cout << "xxx";
+	  packetHandler->printRxPacketError(dxl_error);
+  }
+
+  printf("Look straight ahead at the , press any key when ready");
+  getch();
+  OVR.OVRread();
+  initOVRAngleY = OVR.angleY;
+  
   while(1)
   {
       
     //wait 3 seconds before writing a new value to the dynamixel 
-	Sleep(3000);
+	Sleep(10);
     OVR.OVRread();
 
 	//TODO: read from oculus, convert int [] values to two angle values, 
 	//      use daisy chaining to write goal positions to both servos
 
 	//currently we only have one servo, convert the yaw value to a position value and write it to the servo
-	dxl_goal_position = angleToDxlPosition(OVR.angleY);
-    
-	/**
-    printf("Press any key to continue! (or press ESC to quit!)\n");
-    if (_getch() == ESC_ASCII_VALUE)
-      break;
-	  **/
+	dxl_goal_position = DXL_INIT_POSITION - angleToDxlPosition(OVR.angleY - initOVRAngleY);
+	printf("goal position for dynamixel %d", dxl_goal_position);
+	if (dxl_goal_position > 0 && dxl_goal_position < 1023){
+		//dxl_goal_position = 500;
 
-    // Write goal position
-    dxl_comm_result = packetHandler->write2ByteTxRx(portHandler, DXL_ID, ADDR_MX_GOAL_POSITION, dxl_goal_position, &dxl_error);
-    if (dxl_comm_result != COMM_SUCCESS)
-    {
-      packetHandler->printTxRxResult(dxl_comm_result);
-    }
-    else if (dxl_error != 0)
-    {
-		std::cout << "xxx";
-      packetHandler->printRxPacketError(dxl_error);
-    }
 
-    do
-    {
-      // Read present position
-      dxl_comm_result = packetHandler->read2ByteTxRx(portHandler, DXL_ID, ADDR_MX_PRESENT_POSITION, &dxl_present_position, &dxl_error);
-      if (dxl_comm_result != COMM_SUCCESS)
-      {
-        packetHandler->printTxRxResult(dxl_comm_result);
-      }
-      else if (dxl_error != 0)
-      {
-        packetHandler->printRxPacketError(dxl_error);
-      }
+		// Write goal position
+		dxl_comm_result = packetHandler->write2ByteTxRx(portHandler, DXL_ID, ADDR_MX_GOAL_POSITION, dxl_goal_position, &dxl_error);
+		if (dxl_comm_result != COMM_SUCCESS)
+		{
+			packetHandler->printTxRxResult(dxl_comm_result);
+		}
+		else if (dxl_error != 0)
+		{
+			std::cout << "xxx";
+			packetHandler->printRxPacketError(dxl_error);
+		}
 
-      printf("[ID:%03d] GoalPos:%03d  PresPos:%03d\n", DXL_ID, dxl_goal_position, dxl_present_position);
+		do
+		{
+			// Read present position
+			dxl_comm_result = packetHandler->read2ByteTxRx(portHandler, DXL_ID, ADDR_MX_PRESENT_POSITION, &dxl_present_position, &dxl_error);
+			if (dxl_comm_result != COMM_SUCCESS)
+			{
+				packetHandler->printTxRxResult(dxl_comm_result);
+			}
+			else if (dxl_error != 0)
+			{
+				packetHandler->printRxPacketError(dxl_error);
+			}
 
-    }while((abs(dxl_goal_position - dxl_present_position) > DXL_MOVING_STATUS_THRESHOLD));
+			printf("[ID:%03d] GoalPos:%03d  PresPos:%03d\n", DXL_ID, dxl_goal_position, dxl_present_position);
 
+		} while ((abs(dxl_goal_position - dxl_present_position) > DXL_MOVING_STATUS_THRESHOLD));
+	}
     // Change goal position
 
-
-	/**
-    if (index == 0)
-    {
-      index = 1;
-    }
-    else
-    {
-      index = 0;
-    }
-	**/
-
   }
+  
 
   // Disable Dynamixel Torque
   dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, DXL_ID, ADDR_MX_TORQUE_ENABLE, TORQUE_DISABLE, &dxl_error);
@@ -304,15 +339,18 @@ int main()
 int angleToDxlPosition(double angle){
 
 	//if angle is negative then subtract the computed position value from the maximum dxl_position value
+	/*
 	if (angle < 0){
 		return (int)
 			(DXL_MAXIMUM_POSITION_VALUE -
 			(abs(angle) * (DXL_MAXIMUM_POSITION_VALUE / DXL_POSITION_TO_ANGLE_RATIO)));
 
 	}
+	*/
 	//otherwise simply multiply angle by conversion ratio
-	else{
-		return (int)(angle * (DXL_MAXIMUM_POSITION_VALUE / DXL_POSITION_TO_ANGLE_RATIO));
 
-	}
+	return (int)(angle * (DXL_MAXIMUM_POSITION_VALUE / DXL_POSITION_TO_ANGLE_RATIO));
+
+	
 }
+
