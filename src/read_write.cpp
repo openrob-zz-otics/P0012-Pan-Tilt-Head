@@ -252,7 +252,7 @@ int main()
 	  packetHandler->printRxPacketError(dxl_error);
   }
 
-  printf("Look straight ahead at the , press any key when ready");
+  printf("Look straight ahead at the camera, press any key when ready");
   getch();
   OVR.OVRread();
   initOVRAngleY = OVR.angleY;
@@ -260,7 +260,7 @@ int main()
   while(1)
   {
       
-    //wait 3 seconds before writing a new value to the dynamixel 
+    //we take a new reading every 10 milliseconds
 	Sleep(10);
     OVR.OVRread();
 
@@ -270,8 +270,9 @@ int main()
 	//currently we only have one servo, convert the yaw value to a position value and write it to the servo
 	dxl_goal_position = DXL_INIT_POSITION - angleToDxlPosition(OVR.angleY - initOVRAngleY);
 	printf("goal position for dynamixel %d", dxl_goal_position);
-	if (dxl_goal_position > 0 && dxl_goal_position < 1023){
-		//dxl_goal_position = 500;
+	
+    //only write the position to the motor if within valid range
+    if (dxl_goal_position > 0 && dxl_goal_position < 1023){
 
 
 		// Write goal position
@@ -298,7 +299,7 @@ int main()
 			{
 				packetHandler->printRxPacketError(dxl_error);
 			}
-
+            //print the current position of the motor
 			printf("[ID:%03d] GoalPos:%03d  PresPos:%03d\n", DXL_ID, dxl_goal_position, dxl_present_position);
 
 		} while ((abs(dxl_goal_position - dxl_present_position) > DXL_MOVING_STATUS_THRESHOLD));
