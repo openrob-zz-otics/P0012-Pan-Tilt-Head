@@ -3,6 +3,7 @@
 #include <OVR_CAPI.h>
 #include <windows.h>
 #include <thread>
+#include <vector>
 
 #define COLW setw(15)
 
@@ -39,7 +40,7 @@ private:
     
     //calculate the angular velocity about an axis given a sequence of angle
     //readings
-    double calcAngVel(double angles []);
+    double calcAngVel(vector <double> &angles, int size);
 
 public:
 

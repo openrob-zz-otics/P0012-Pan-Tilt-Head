@@ -46,7 +46,7 @@
 #endif
 
 //include file for reading from oculus
-#include "header_files\OculusRiftSensor.h"
+#include "C:\openrobotics\P0012-Pan-Tilt-Head\include\OculusRiftSensor.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -59,8 +59,8 @@
 #define ADDR_MX_GOAL_POSITION           30
 #define ADDR_MX_PRESENT_POSITION        36
 
-#define ADDR_MX_TORQUE_LIMIT_HIGH          35
-#define ADDR_MX_TORQUE_LIMIT_LOW           34
+#define ADDR_MX_TORQUE_LIMIT_HIGH       35
+#define ADDR_MX_TORQUE_LIMIT_LOW        34
 
 //
 #define ADDR_MX_MAX_TORQUE_HIGH         15
@@ -183,7 +183,7 @@ int main()
   uint8_t dxl_error = 0;                          // Dynamixel error
   uint16_t dxl_present_position = 0;              // Present position
 
-  // Open port
+  // Open Port
   if (portHandler->openPort())
   {
     printf("Succeeded to open the port!\n");
@@ -196,7 +196,7 @@ int main()
     return 0;
   }
 
-  // Set port baudrate
+  // Set Port Baudrate
   if (portHandler->setBaudRate(BAUDRATE))
   {
     printf("Succeeded to change the baudrate!\n");
@@ -209,6 +209,7 @@ int main()
     return 0;
   }
 
+  //Write Initial Torque Value To Dynamixel
   dxl_comm_result = packetHandler->write2ByteTxRx(portHandler, DXL_ID, ADDR_MX_TORQUE_LIMIT_LOW, 0x200, &dxl_error);
   if (dxl_comm_result != COMM_SUCCESS)
   {
@@ -240,7 +241,7 @@ int main()
   }
 
   
-  // initialize dynamixel position
+  // Initialize Dynamixel Position
   dxl_comm_result = packetHandler->write2ByteTxRx(portHandler, DXL_ID, ADDR_MX_GOAL_POSITION, DXL_INIT_POSITION, &dxl_error);
   if (dxl_comm_result != COMM_SUCCESS)
   {
@@ -255,7 +256,7 @@ int main()
   printf("Look straight ahead at the camera, press any key when ready");
   getch();
   OVR.OVRread();
-  initOVRAngleY = OVR.angleY;
+  initOVRAngleY = OVR.getAngleY();
   
   while(1)
   {
@@ -268,7 +269,7 @@ int main()
 	//      use daisy chaining to write goal positions to both servos
 
 	//currently we only have one servo, convert the yaw value to a position value and write it to the servo
-	dxl_goal_position = DXL_INIT_POSITION - angleToDxlPosition(OVR.angleY - initOVRAngleY);
+	dxl_goal_position = DXL_INIT_POSITION - angleToDxlPosition(OVR.getAngleY() - initOVRAngleY);
 	printf("goal position for dynamixel %d", dxl_goal_position);
 	
     //only write the position to the motor if within valid range
@@ -339,19 +340,13 @@ int main()
 **/
 int angleToDxlPosition(double angle){
 
-	//if angle is negative then subtract the computed position value from the maximum dxl_position value
-	/*
-	if (angle < 0){
-		return (int)
-			(DXL_MAXIMUM_POSITION_VALUE -
-			(abs(angle) * (DXL_MAXIMUM_POSITION_VALUE / DXL_POSITION_TO_ANGLE_RATIO)));
-
-	}
-	*/
-	//otherwise simply multiply angle by conversion ratio
 
 	return (int)(angle * (DXL_MAXIMUM_POSITION_VALUE / DXL_POSITION_TO_ANGLE_RATIO));
 
 	
+}
+
+int angVelToDxlTorque(double angVel){
+    
 }
 

@@ -5,7 +5,7 @@
 #include <iostream>
 #include <iomanip>
 #include <OVR_CAPI.h>
-#include "header_files\OculusRiftSensor.h"
+#include "C:\openrobotics\P0012-Pan-Tilt-Head\include\OculusRiftSensor.h"
 #include <windows.h>
 #include <thread>
 #include <vector>
@@ -64,18 +64,19 @@ void OculusRiftSensor::OVRread(){
 	// Initialize our session with the Oculus HMD.
 
 
-	double count = 0;
+	int count = 0;
+	int max_count = 100000;
+	int store_angle_count = 10000;
+
+
 	double x_sum = 0.0;
 	double y_sum = 0.0;
 	double z_sum = 0.0;
 
-	double max_count = 100000;
-    double store_angle_count = 10000;
-  
     
-    vector <double> anglesX;
-    vector <double> anglesY; 
-    vector <double> anglesZ;
+	vector <double> anglesX(10);
+	vector <double> anglesY(10);
+	vector <double> anglesZ(10);
     
 	double sum = 0;
 
@@ -107,7 +108,7 @@ void OculusRiftSensor::OVRread(){
             if((count % store_angle_count) == 0){
                 
                 anglesX.push_back(pitchToAngle(x_sum / count));
-                anglesY.puch_back(yawToAngle(y_sum / count));
+                anglesY.push_back(yawToAngle(y_sum / count));
                 anglesZ.push_back(rollToAngle(z_sum / count));
                 
             }
@@ -125,12 +126,12 @@ void OculusRiftSensor::OVRread(){
 		_angleZ = rollToAngle(roll);
         
         //calculate and store the angular velocity about each axis
-        _angVel_X = calcAngVel(anglesX);
-        _angVel_Y = calcAngVel(angleY);
-        _angVel_Z = calcAngVel(angleZ);
+        _angVel_X = calcAngVel(anglesX, 10);
+        _angVel_Y = calcAngVel(anglesY, 10);
+        _angVel_Z = calcAngVel(anglesZ, 10);
 
-		std::cout << "Orientation (x,y,z):  " << COLW << angleX << ","
-			<< COLW << angleY << "," << COLW << angleZ
+		std::cout << "Orientation (x,y,z):  " << COLW << _angleX << ","
+			<< COLW << _angleY << "," << COLW << _angleZ
 			<< endl;
 
 	}
@@ -144,19 +145,19 @@ Function to calculate the angular velocity about an axis given a sequence
 of angle readings
 
 ************************************************************************/
-double calcAngVel(vector <double> angles){
+double OculusRiftSensor::calcAngVel(vector <double> &angles, int size){
     
-    double difference_sum = 0;
+    double difference_sum = 0.0;
     
-    for(int i = 1; i < angles.size; i++){
+    for(int i = 1; i < size; i++){
         difference_sum += (angles[i] - angles[i-1]);
     }
     
     //TODO: need to fix this by doing experiments and determining if
     //this is accurate
     
-    return difference_sum / angles.size;
-]
+    return difference_sum / size;
+
 }
 /************************************************************************
 
@@ -209,7 +210,7 @@ double OculusRiftSensor::getAngVelY(){
     return _angVel_Y;
 }
 
-double OculusRiftSensor::getAngleZ(){
+double OculusRiftSensor::getAngVelZ(){
     return _angVel_Z;
 }
 
