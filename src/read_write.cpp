@@ -46,7 +46,7 @@
 #endif
 
 //include file for reading from oculus
-#include "C:\openrobotics\P0012-Pan-Tilt-Head\include\OculusRiftSensor.h"
+#include "C:\Users\User\OneDrive\op_bots\P0012-Pan-Tilt-Head\include\OculusRiftSensor.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -77,10 +77,16 @@
 
 #define TORQUE_ENABLE                   1                   // Value for enabling the torque
 #define TORQUE_DISABLE                  0                   // Value for disabling the torque
-#define DXL_MINIMUM_POSITION_VALUE      0                 // Dynamixel will rotate between this value
-#define DXL_MAXIMUM_POSITION_VALUE      1023              // and this value (note that the Dynamixel would not move when the position value is out of movable range. Check e-manual about the range of the Dynamixel you use.)
+#define INIT_TORQUE_VAL					0x200
+#define DXL_ANGVEL_TO_TORQUE_RATIO		10					// Conversion from an angular velocity value to torque
+#define DXL_TORQUE_CHANGE_THRESHOLD		100					// Threshold for a torque change in order for it to be applied
+
+#define DXL_MINIMUM_POSITION_VALUE      0					// Dynamixel will rotate between this value
+#define DXL_MAXIMUM_POSITION_VALUE      1023                // and this value (note that the Dynamixel would not move when the position value is out of movable range. Check e-manual about the range of the Dynamixel you use.)
 #define DXL_POSITION_TO_ANGLE_RATIO		300
 #define DXL_MOVING_STATUS_THRESHOLD     10                  // Dynamixel moving status threshold
+
+
 
 #define ESC_ASCII_VALUE                 0x1b
 #define DXL_INIT_POSITION               512
@@ -139,6 +145,8 @@ int kbhit(void)
 
 void initDxl();
 
+int setTorque(int torque);
+
 /**
 
 void openDxlPort();
@@ -153,6 +161,8 @@ void readDxlPosition();
 **/
 
 int angleToDxlPosition(double angle);
+
+int angVelToDxlTorque(double angVel);
 
 
 int main()
@@ -169,6 +179,8 @@ int main()
   
   //create OculusRiftSensor instance and initialize it
   OculusRiftSensor OVR;
+
+  int torque;
 
   //initial angle value for the head set when user looking straight ahead
   double initOVRAngleY;
@@ -221,6 +233,7 @@ int main()
   }
   else
   {
+	  torque = 0x200;
 	  printf("Dynamixel max. torque has been successfully changed \n");
   }
 
@@ -262,32 +275,76 @@ int main()
   {
       
     //we take a new reading every 10 milliseconds
-	Sleep(10);
+	Sleep(5);
     OVR.OVRread();
+
+	dxl_comm_result = packetHandler->read2ByteTxRx(portHandler, DXL_ID, ADDR_MX_PRESENT_POSITION, &dxl_present_position, &dxl_error);
+	if (dxl_comm_result != COMM_SUCCESS)
+	{
+		packetHandler->printTxRxResult(dxl_comm_result);
+	}
+	else if (dxl_error != 0)
+	{
+		packetHandler->printRxPacketError(dxl_error);
+	}
+	
 
 	//TODO: read from oculus, convert int [] values to two angle values, 
 	//      use daisy chaining to write goal positions to both servos
 
 	//currently we only have one servo, convert the yaw value to a position value and write it to the servo
 	dxl_goal_position = DXL_INIT_POSITION - angleToDxlPosition(OVR.getAngleY() - initOVRAngleY);
-	printf("goal position for dynamixel %d", dxl_goal_position);
+
+	if (dxl_goal_position < 0){
+		dxl_goal_position = 0;
+	}
+	else if (dxl_goal_position > 1023){
+		dxl_goal_position = 1023;
+	}
+
+	
+	//convert the angular velocity value to a torque value, if difference isn't great enough
+	//avoid writing anything to dynamixel
+
+	int new_torque = abs(dxl_present_position - dxl_goal_position) + abs(OVR.getAngVelY()*30000);
+
+	if (new_torque > 1023){
+		new_torque = 1023;
+	}
+
+	dxl_comm_result = packetHandler->write2ByteTxRx(portHandler, DXL_ID, ADDR_MX_TORQUE_LIMIT_LOW, new_torque, &dxl_error);
+	if (dxl_comm_result != COMM_SUCCESS)
+	{
+		packetHandler->printTxRxResult(dxl_comm_result);
+		printf("Error: dynanmixel torque change not applied \n");
+	}
+	else if (dxl_error != 0)
+	{
+		packetHandler->printRxPacketError(dxl_error);
+		printf("Error: dynamixel torque change not applied \n");
+	}
+	else
+	{
+		printf("Dynamixel max. torque has been successfully changed \n");
+	}
+	//printf("goal position for dynamixel %d", dxl_goal_position);
 	
     //only write the position to the motor if within valid range
-    if (dxl_goal_position > 0 && dxl_goal_position < 1023){
+   
 
+	// Write goal position
+	dxl_comm_result = packetHandler->write2ByteTxRx(portHandler, DXL_ID, ADDR_MX_GOAL_POSITION, dxl_goal_position, &dxl_error);
+	if (dxl_comm_result != COMM_SUCCESS)
+	{
+		packetHandler->printTxRxResult(dxl_comm_result);
+	}
+	else if (dxl_error != 0)
+	{
+		std::cout << "xxx";
+		packetHandler->printRxPacketError(dxl_error);
+	}
 
-		// Write goal position
-		dxl_comm_result = packetHandler->write2ByteTxRx(portHandler, DXL_ID, ADDR_MX_GOAL_POSITION, dxl_goal_position, &dxl_error);
-		if (dxl_comm_result != COMM_SUCCESS)
-		{
-			packetHandler->printTxRxResult(dxl_comm_result);
-		}
-		else if (dxl_error != 0)
-		{
-			std::cout << "xxx";
-			packetHandler->printRxPacketError(dxl_error);
-		}
-
+		/*
 		do
 		{
 			// Read present position
@@ -304,7 +361,8 @@ int main()
 			printf("[ID:%03d] GoalPos:%03d  PresPos:%03d\n", DXL_ID, dxl_goal_position, dxl_present_position);
 
 		} while ((abs(dxl_goal_position - dxl_present_position) > DXL_MOVING_STATUS_THRESHOLD));
-	}
+		*/
+	
     // Change goal position
 
   }
@@ -346,7 +404,18 @@ int angleToDxlPosition(double angle){
 	
 }
 
+
 int angVelToDxlTorque(double angVel){
-    
+
+	double abs_vel = abs(angVel) * 1000000;
+	if ((abs_vel / DXL_ANGVEL_TO_TORQUE_RATIO) > 0x3FF){
+		return 0x3FF;
+	}
+	else if ((abs_vel / DXL_ANGVEL_TO_TORQUE_RATIO) <= 0x030){
+		return 0x030;
+	}
+	else{
+		return abs_vel / DXL_ANGVEL_TO_TORQUE_RATIO;
+	}
 }
 

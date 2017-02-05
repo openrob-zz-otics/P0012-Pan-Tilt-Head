@@ -5,7 +5,7 @@
 #include <iostream>
 #include <iomanip>
 #include <OVR_CAPI.h>
-#include "C:\openrobotics\P0012-Pan-Tilt-Head\include\OculusRiftSensor.h"
+#include "C:\Users\User\OneDrive\op_bots\P0012-Pan-Tilt-Head\include\OculusRiftSensor.h"
 #include <windows.h>
 #include <thread>
 #include <vector>
@@ -74,9 +74,13 @@ void OculusRiftSensor::OVRread(){
 	double z_sum = 0.0;
 
     
-	vector <double> anglesX(10);
-	vector <double> anglesY(10);
-	vector <double> anglesZ(10);
+	//vector <double> anglesX(10);
+	//vector <double> anglesY(10);
+	//vector <double> anglesZ(10);
+
+	double anglesX[10];
+	double anglesY[10];
+	double anglesZ[10];
     
 	double sum = 0;
 
@@ -106,10 +110,21 @@ void OculusRiftSensor::OVRread(){
 			z_sum = z_sum + tempOrient.z;
             
             if((count % store_angle_count) == 0){
-                
-                anglesX.push_back(pitchToAngle(x_sum / count));
-                anglesY.push_back(yawToAngle(y_sum / count));
-                anglesZ.push_back(rollToAngle(z_sum / count));
+
+				if (count == 0){
+					anglesX[count / store_angle_count] = x_sum;
+					anglesY[count / store_angle_count] = y_sum;
+					anglesZ[count / store_angle_count] = z_sum;
+				}
+				else{
+
+					anglesX[count / store_angle_count] = x_sum / count;
+					anglesY[count / store_angle_count] = y_sum / count;
+					anglesZ[count / store_angle_count] = z_sum / count;
+				}
+              //  anglesX.push_back(pitchToAngle(x_sum / count));
+              // anglesY.push_back(yawToAngle(y_sum / count));
+              // anglesZ.push_back(rollToAngle(z_sum / count));
                 
             }
 			count++;
@@ -129,10 +144,11 @@ void OculusRiftSensor::OVRread(){
         _angVel_X = calcAngVel(anglesX, 10);
         _angVel_Y = calcAngVel(anglesY, 10);
         _angVel_Z = calcAngVel(anglesZ, 10);
+		printf("Angular velocity y: %lf\n", _angVel_Y);
 
-		std::cout << "Orientation (x,y,z):  " << COLW << _angleX << ","
-			<< COLW << _angleY << "," << COLW << _angleZ
-			<< endl;
+		//std::cout << "Orientation (x,y,z):  " << COLW << _angleX << ","
+		//	<< COLW << _angleY << "," << COLW << _angleZ
+		//	<< endl;
 
 	}
     
@@ -145,9 +161,13 @@ Function to calculate the angular velocity about an axis given a sequence
 of angle readings
 
 ************************************************************************/
-double OculusRiftSensor::calcAngVel(vector <double> &angles, int size){
+double OculusRiftSensor::calcAngVel(double angles [], int size){
     
     double difference_sum = 0.0;
+
+	for (int i = 0; i < size; i++){
+		printf("angle %d: %lf\n", i, angles[i]);
+	}
     
     for(int i = 1; i < size; i++){
         difference_sum += (angles[i] - angles[i-1]);
