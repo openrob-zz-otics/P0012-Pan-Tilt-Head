@@ -40,7 +40,7 @@ private:
     
     //calculate the angular velocity about an axis given a sequence of angle
     //readings
-    double calcAngVel(vector <double> &angles, int size);
+    double calcAngVel(double angles [], int size);
 
 public:
 
