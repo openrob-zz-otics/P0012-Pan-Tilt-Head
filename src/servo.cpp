@@ -13,6 +13,9 @@ Servo::Servo(int dxl_id,
              int init_position, 
              char device_name []){
     
+    this->dxl_id = dxl_id;
+    this->protocol_ver = protocol_ver;
+    this->baudrate = baudrate;
     
     switch(type){
         
@@ -28,8 +31,7 @@ Servo::Servo(int dxl_id,
             this->addr_torque_limit_high = RX_24F::addr_torque_limit_high;
             this->addr_max_torque_high = RX_24F::addr_max_torque_high;
             this->addr_max_torque_low = RX_24F::addr_max_torque_low;
-			this->dxl_id = dxl_id;
-            
+   
             // Initialize PortHandler instance
             // Set the port path
             // Get methods and members of PortHandlerLinux or PortHandlerWindows

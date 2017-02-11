@@ -53,26 +53,42 @@
 #include <stdio.h>
 #include <iostream>                               
 
-
-#define DXL_PAN_ANGVEL_TO_TORQUE_RATIO		10					// Conversion from an angular velocity value to torque
-#define DXL_PAN_POSITION_TO_ANGLE_RATIO		300
-#define DXL_PAN_MOVING_THRESHOLD            10                  // Dynamixel moving status threshold
-#define DXL_PAN_TORQUE_THRESHOLD		    100					// Threshold for a torque change in order for it to be applied
+#define DXL_TILT_ANGVEL_TO_TORQUE_RATIO		 10					// Conversion from an angular velocity value to torque
+#define DXL_TILT_POSITION_TO_ANGLE_RATIO	 300
+#define DXL_TILT_MOVING_THRESHOLD            10                 // Dynamixel moving status threshold
+#define DXL_TILT_TORQUE_THRESHOLD		     100			    // Threshold for a torque change in order for it to be applied
 
 // Default setting
-#define DXL_PAN_PROTOCOL_VERSION            1.0
-#define DXL_PAN_SERVO_TYPE                  RX_24_F
-#define DXL_PAN_ID                          2                   // Dynamixel ID: 1
-#define DXL_PAN_BAUDRATE                    57142
-#define DXL_PAN_DEVICE_NAME                 "COM4"				// Check which port is being used on your controller
-                                                                // ex) Windows: "COM1"   Linux: "/dev/ttyUSB0"
-#define DXL_PAN_INIT_TORQUE		            0x200
+#define DXL_TILT_PROTOCOL_VERSION            1.0
+#define DXL_TILT_SERVO_TYPE                  RX_24_F
+#define DXL_TILT_ID                          2                  // Dynamixel ID: 1
+#define DXL_TILT_BAUDRATE                    57142
+#define DXL_TILT_DEVICE_NAME                 "COM4"				// Check which port is being used on your controller
+                                                                // ex) Windows: "COM1"   Linux: "/dev/ttyUSB0"                                                              
+#define DXL_TILT_INIT_TORQUE		         0x200
 
-#define DXL_PAN_MIN_POSITION_VALUE          0					// Dynamixel will rotate between this value
-#define DXL_PAN_MAX_POSITION_VALUE          1023                // and this value (note that the Dynamixel would not move when the position value is out of movable range. Check e-manual about the range of the Dynamixel you use.)
+#define DXL_TILT_MIN_POSITION_VALUE          0					// Dynamixel will rotate between this value
+#define DXL_TILT_MAX_POSITION_VALUE          1023               // and this value (note that the Dynamixel would not move when the position value is out of movable range. Check e-manual about the range of the Dynamixel you use.)
 
-#define ESC_ASCII_VALUE                     0x1b
-#define DXL_INIT_POSITION                   512
+#define DXL_PAN_ANGVEL_TO_TORQUE_RATIO		 10					// Conversion from an angular velocity value to torque
+#define DXL_PAN_POSITION_TO_ANGLE_RATIO		 300
+#define DXL_PAN_MOVING_THRESHOLD             10                 // Dynamixel moving status threshold
+#define DXL_PAN_TORQUE_THRESHOLD		     100				// Threshold for a torque change in order for it to be applied
+
+// Default setting
+#define DXL_PAN_PROTOCOL_VERSION             1.0
+#define DXL_PAN_SERVO_TYPE                   RX_24_F
+#define DXL_PAN_ID                           1                  // Dynamixel ID: 1
+#define DXL_PAN_BAUDRATE                     57142
+#define DXL_PAN_DEVICE_NAME                  "COM4"				// Check which port is being used on your controller
+                                                                // ex) Windows: "COM1"   Linux: "/dev/ttyUSB0"                                                              
+#define DXL_PAN_INIT_TORQUE		             0x200
+
+#define DXL_PAN_MIN_POSITION_VALUE           0					// Dynamixel will rotate between this value
+#define DXL_PAN_MAX_POSITION_VALUE           1023               // and this value (note that the Dynamixel would not move when the position value is out of movable range. Check e-manual about the range of the Dynamixel you use.)
+
+#define ESC_ASCII_VALUE                      0x1b
+#define DXL_INIT_POSITION                    512
 
 int getch()
 {
@@ -217,6 +233,14 @@ int main()
                   DXL_PAN_INIT_TORQUE, 
                   DXL_INIT_POSITION,
                   DXL_PAN_DEVICE_NAME);
+                  
+    Servo dxl_tilt(DXL_TILT_ID,
+                   DXL_TILT_PROTOCOL_VERSION,
+                   DXL_TILT_SERVO_TYPE,
+                   DXL_TILT_BAUDRATE,
+                   DXL_TILT_INIT_TORQUE,
+                   DXL_INIT_POSITION,
+                   DXL_TILT_DEVICE_NAME);
                             
 
     //create OculusRiftSensor instance and initialize it
@@ -225,9 +249,14 @@ int main()
     //initial angle value for the head set when user looking straight ahead
     double initOVRAngleY;
     
-    int dxl_present_position;
-    int dxl_goal_position;
-    int dxl_goal_torque;
+    double initOVRAngleX;
+    
+    int dxl_pan_present_position;
+    int dxl_tilt_present_position;
+    int dxl_pan_goal_position;
+    int dxl_tilt_goal_position;
+    int dxl_pan_goal_torque;
+    int dxl_tilt_goal_torque;
   
     // get the initial orientation of the oculus rift when the user is ready
     
@@ -235,6 +264,7 @@ int main()
     getch();
     OVR.OVRread();
     initOVRAngleY = OVR.getAngleY();
+    initOVRAngleX = OVR.getAngleX();
   
     while(1)
     {
@@ -244,25 +274,33 @@ int main()
         OVR.OVRread();
 
         //read the present position of the dynamixel
-        dxl_present_position = dxl_pan.readPosition();
+        dxl_pan_present_position = dxl_pan.readPosition();
+        dxl_tilt_present_position = dxl_tilt.readPosition();
 
         //TODO: read from oculus, convert int [] values to two angle values, 
         //      use daisy chaining to write goal positions to both servos
 
         //currently we only have one servo, convert the yaw value to a position value and write it to the servo
-        dxl_goal_position = dxlCalcGoalPosition(OVR.getAngleY() - initOVRAngleY);
-
-        dxl_goal_torque = dxlCalcGoalTorque(dxl_present_position,
-                                            dxl_goal_position,
+        dxl_pan_goal_position = dxlCalcGoalPosition(OVR.getAngleY() - initOVRAngleY);
+        dxl_tilt_goal_position = dxlCalcGoalPosition(OVR.getAngleX() - initOVRAngleX);
+        
+        dxl_pan_goal_torque = dxlCalcGoalTorque(dxl_pan_present_position,
+                                            dxl_pan_goal_position,
+                                            OVR.getAngVelY());
+                                            
+        dxl_tilt_goal_torque = dxlCalcGoalTorque(dxl_tilt_present_position,
+                                            dxl_tilt_goal_position,
                                             OVR.getAngVelY());
         
 
-        dxl_pan.setTorque(dxl_goal_torque);
+        dxl_pan.setTorque(dxl_pan_goal_torque);
+        dxl_tilt.setTorque(dxl_tilt_goal_torque);
         
 
 
         // Write goal position
-        dxl_pan.writePosition(dxl_goal_position);
+        dxl_pan.writePosition(dxl_pan_goal_position);
+        dxl_tilt.writePosition(dxl_tilt_goal_position);
         
 
     }
