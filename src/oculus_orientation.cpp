@@ -5,7 +5,7 @@
 #include <iostream>
 #include <iomanip>
 #include <OVR_CAPI.h>
-#include "C:\Users\User\OneDrive\op_bots\P0012-Pan-Tilt-Head\include\OculusRiftSensor.h"
+#include "..\include\OculusRiftSensor.h"
 #include <windows.h>
 #include <thread>
 #include <vector>
@@ -165,9 +165,9 @@ double OculusRiftSensor::calcAngVel(double angles [], int size){
     
     double difference_sum = 0.0;
 
-	for (int i = 0; i < size; i++){
-		printf("angle %d: %lf\n", i, angles[i]);
-	}
+	//for (int i = 0; i < size; i++){
+	//	printf("angle %d: %lf\n", i, angles[i]);
+	//}
     
     for(int i = 1; i < size; i++){
         difference_sum += (angles[i] - angles[i-1]);
@@ -193,7 +193,7 @@ double OculusRiftSensor::yawToAngle(double yaw){
 
 double OculusRiftSensor::pitchToAngle(double pitch){
 
-	return(pitch / 0.50)*90.0;
+	return (pitch / 0.50)*90.0;
 
 }
 
