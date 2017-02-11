@@ -62,7 +62,7 @@
 // Default setting
 #define DXL_PAN_PROTOCOL_VERSION            1.0
 #define DXL_PAN_SERVO_TYPE                  RX_24_F
-#define DXL_PAN_ID                          1                   // Dynamixel ID: 1
+#define DXL_PAN_ID                          2                   // Dynamixel ID: 1
 #define DXL_PAN_BAUDRATE                    57142
 #define DXL_PAN_DEVICE_NAME                 "COM4"				// Check which port is being used on your controller
                                                                 // ex) Windows: "COM1"   Linux: "/dev/ttyUSB0"

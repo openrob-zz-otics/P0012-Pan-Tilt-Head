@@ -28,16 +28,17 @@ Servo::Servo(int dxl_id,
             this->addr_torque_limit_high = RX_24F::addr_torque_limit_high;
             this->addr_max_torque_high = RX_24F::addr_max_torque_high;
             this->addr_max_torque_low = RX_24F::addr_max_torque_low;
+			this->dxl_id = dxl_id;
             
             // Initialize PortHandler instance
             // Set the port path
             // Get methods and members of PortHandlerLinux or PortHandlerWindows
-            portHandler = dynamixel::PortHandler::getPortHandler(device_name);
+            portHandler = dynamixel::PortHandler::getPortHandler("COM4");
             
             // Initialize PacketHandler instance
             // Set the protocol version
             // Get methods and members of Protocol1PacketHandler or Protocol2PacketHandler
-            packetHandler = dynamixel::PacketHandler::getPacketHandler(protocol_ver);
+            packetHandler = dynamixel::PacketHandler::getPacketHandler(1.0);
             
             //open the port for the provided device name
             openPort();
@@ -45,10 +46,10 @@ Servo::Servo(int dxl_id,
             //set the baudrate for communication with this servo
             setBaudrate(baudrate);
             
-            enableTorque();
-            
-            //initalize the torque value
-            setTorque(init_torque);
+			//initalize the torque value
+			setTorque(init_torque);
+			
+			enableTorque();
             
             //intialize the dynamixel position
             writePosition(init_position);
