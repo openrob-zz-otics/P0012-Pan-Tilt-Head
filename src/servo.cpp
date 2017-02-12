@@ -5,7 +5,9 @@
 #include "..\include\servo.h"
 
 
-Servo::Servo(int dxl_id, 
+Servo::Servo(dynamixel::PortHandler *portHandler,
+			 dynamixel::PacketHandler *packetHandler,
+			 int dxl_id,
              double protocol_ver, 
              servo_type type, 
              int baudrate,
@@ -13,9 +15,16 @@ Servo::Servo(int dxl_id,
              int init_position, 
              char device_name []){
     
+	this->portHandler = portHandler;
+	this->packetHandler = packetHandler;
     this->dxl_id = dxl_id;
     this->protocol_ver = protocol_ver;
     this->baudrate = baudrate;
+
+	// Initialize PacketHandler instance
+	// Set the protocol version
+	// Get methods and members of Protocol1PacketHandler or Protocol2PacketHandler
+	
     
     switch(type){
         
@@ -31,22 +40,6 @@ Servo::Servo(int dxl_id,
             this->addr_torque_limit_high = RX_24F::addr_torque_limit_high;
             this->addr_max_torque_high = RX_24F::addr_max_torque_high;
             this->addr_max_torque_low = RX_24F::addr_max_torque_low;
-   
-            // Initialize PortHandler instance
-            // Set the port path
-            // Get methods and members of PortHandlerLinux or PortHandlerWindows
-            portHandler = dynamixel::PortHandler::getPortHandler("COM4");
-            
-            // Initialize PacketHandler instance
-            // Set the protocol version
-            // Get methods and members of Protocol1PacketHandler or Protocol2PacketHandler
-            packetHandler = dynamixel::PacketHandler::getPacketHandler(1.0);
-            
-            //open the port for the provided device name
-            openPort();
-            
-            //set the baudrate for communication with this servo
-            setBaudrate(baudrate);
             
 			//initalize the torque value
 			setTorque(init_torque);
@@ -71,24 +64,6 @@ Servo::~Servo(){
     //disable the dynamixle torque and close the port
     disableTorque();
     portHandler->closePort();
-}
-
-
-void Servo::openPort(){
-
-    // Open Port
-    if (portHandler->openPort())
-    {
-        printf("Succeeded to open the port!\n");
-    }
-    else
-    {
-        printf("Failed to open the port!\n");
-        printf("Press any key to terminate...\n");
-        _getch();
-        exit(EXIT_FAILURE);
-    }
-
 }
 
 
@@ -126,22 +101,6 @@ void Servo::disableTorque(){
     else if (dxl_error != 0)
     {
         packetHandler->printRxPacketError(dxl_error);
-        exit(EXIT_FAILURE);
-    }
-}
-
-void Servo::setBaudrate(int baudrate){
-    
-    // Set Port Baudrate
-    if (portHandler->setBaudRate(baudrate))
-    {
-        printf("Succeeded to change the baudrate!\n");
-    }
-    else
-    {
-        printf("Failed to change the baudrate!\n");
-        printf("Press any key to terminate...\n");
-        _getch();
         exit(EXIT_FAILURE);
     }
 }

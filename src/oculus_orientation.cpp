@@ -65,8 +65,8 @@ void OculusRiftSensor::OVRread(){
 
 
 	int count = 0;
-	int max_count = 100000;
-	int store_angle_count = 10000;
+	int max_count = 50000;
+	int store_angle_count = 5000;
 
 
 	double x_sum = 0.0;

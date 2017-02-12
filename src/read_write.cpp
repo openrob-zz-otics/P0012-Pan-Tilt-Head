@@ -189,7 +189,7 @@ static int dxlCalcGoalTorque(int dxl_present_position,
                              double angVel){
     
     
-    int dxl_goal_torque = abs(dxl_present_position - dxl_goal_position) + abs(angVel*30000);
+    int dxl_goal_torque = abs(dxl_present_position - dxl_goal_position) + abs(angVel*30000) + 5;
     
     //only write the torque to the motor if within valid range        
     if (dxl_goal_torque > 1023){
@@ -225,8 +225,42 @@ static int dxlCalcGoalPosition(double angle){
 
 int main()
 {
-    
-    Servo dxl_pan(DXL_PAN_ID, 
+
+	dynamixel::PacketHandler *packetHandler = dynamixel::PacketHandler::getPacketHandler(1.0);
+
+	dynamixel::PortHandler *portHandler = dynamixel::PortHandler::getPortHandler("COM4");
+
+	// Open Port
+	if (portHandler->openPort())
+	{
+		printf("Succeeded to open the port!\n");
+	}
+	else
+	{
+		printf("Failed to open the port!\n");
+		printf("Press any key to terminate...\n");
+		_getch();
+		exit(EXIT_FAILURE);
+	}
+
+
+	// Set Port Baudrate
+	if (portHandler->setBaudRate(DXL_PAN_BAUDRATE))
+	{
+		printf("Succeeded to change the baudrate!\n");
+	}
+	else
+	{
+		printf("Failed to change the baudrate!\n");
+		printf("Press any key to terminate...\n");
+		_getch();
+		exit(EXIT_FAILURE);
+	}
+	
+
+	Servo dxl_pan(portHandler,
+				  packetHandler,
+				  DXL_PAN_ID, 
                   DXL_PAN_PROTOCOL_VERSION, 
                   DXL_PAN_SERVO_TYPE,
                   DXL_PAN_BAUDRATE, 
@@ -234,7 +268,9 @@ int main()
                   DXL_INIT_POSITION,
                   DXL_PAN_DEVICE_NAME);
                   
-    Servo dxl_tilt(DXL_TILT_ID,
+	Servo dxl_tilt(portHandler,
+				   packetHandler,
+				   DXL_TILT_ID,
                    DXL_TILT_PROTOCOL_VERSION,
                    DXL_TILT_SERVO_TYPE,
                    DXL_TILT_BAUDRATE,
@@ -290,7 +326,7 @@ int main()
                                             
         dxl_tilt_goal_torque = dxlCalcGoalTorque(dxl_tilt_present_position,
                                             dxl_tilt_goal_position,
-                                            OVR.getAngVelY());
+                                            OVR.getAngVelX());
         
 
         dxl_pan.setTorque(dxl_pan_goal_torque);

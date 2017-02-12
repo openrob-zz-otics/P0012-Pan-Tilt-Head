@@ -58,9 +58,6 @@ private:
     int addr_max_torque_high;
     int addr_max_torque_low;
     
-    
-    void openPort();
-    void setBaudrate(int baudrate);
     void enableTorque();
     void disableTorque();
        
@@ -69,13 +66,15 @@ public:
 
     Servo();
     
-    Servo(int dxl_id, 
-             double protocol_ver, 
-             servo_type type, 
-             int baudrate,
-             int init_torque, 
-             int init_position, 
-             char device_name []);
+    Servo(dynamixel::PortHandler *portHandler,
+    	  dynamixel::PacketHandler *packetHandler,
+    	  int dxl_id, 
+          double protocol_ver, 
+          servo_type type, 
+          int baudrate,
+          int init_torque, 
+          int init_position, 
+          char device_name []);
     
     ~Servo();
     
