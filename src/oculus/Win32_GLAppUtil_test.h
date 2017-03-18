@@ -747,6 +747,8 @@ struct Scene
             Models[i]->Render(view, proj);
     }
 
+	// USER DEFINED FUNCTIONS
+
     GLuint CreateShader(GLenum type, const GLchar* src)
     {
         GLuint shader = glCreateShader(type);
@@ -802,141 +804,69 @@ struct Scene
         GLuint    vshader = CreateShader(GL_VERTEX_SHADER, VertexShaderSrc);
         GLuint    fshader = CreateShader(GL_FRAGMENT_SHADER, FragmentShaderSrc);
 
-		//int var_shift = -3000;
+		// temporary variables, before transforming into function parameters
+		int diag_length = 256;
+		int vert_length = 50;
+		int horz_length = 50;
+
         // Make textures
-        ShaderFill * grid_material[4];
-        for (int k = 0; k < 4; ++k)
+        ShaderFill * grid_material[1];
+
+		// fill screen
+		static DWORD tex_pixels[256 * 256];
+        for (int j = 0; j < 256; ++j)
         {
-            static DWORD tex_pixels[256 * 256];
-            for (int j = 0; j < 256; ++j)
+			for (int i = 0; i < 256; ++i)
             {
-                for (int i = 0; i < 256; ++i)
-                {
-                    //if (k == 0) tex_pixels[j * 256 + i] = (((i >> 7) ^ (j >> 7)) & 1) ? 0xffb4b4b4 : 0xff505050;// floor
-					if (k == 0) tex_pixels[j * 256 + i] = 0x1500ff00;// floor
-					
-					// add lines of white on floor
-					if (k == 0){
-
-						//for (i = 0; i < 250; i++){
-							tex_pixels[50] = 0xffb4b4b4;
-						//}
-
-					}
-			
-					/*
-					if (k == 0) tex_pixels[500] = 0xffb4b4b4;// floor
-					if (k == 0) tex_pixels[501] = 0xffb4b4b4;// floor
-					if (k == 0) tex_pixels[502] = 0xffb4b4b4;// floor
-					if (k == 0) tex_pixels[503] = 0xffb4b4b4;// floor
-					if (k == 0) tex_pixels[504] = 0xffb4b4b4;// floor
-					if (k == 0) tex_pixels[505] = 0xffb4b4b4;// floor
-					
-					if (k == 0) tex_pixels[65057] = 0xffb4b4b4;// floor
-					if (k == 0) tex_pixels[65058] = 0xffb4b4b4;// floor
-					if (k == 0) tex_pixels[65059] = 0xffb4b4b4;// floor
-					if (k == 0) tex_pixels[65060] = 0xffb4b4b4;// floor
-					if (k == 0) tex_pixels[65061] = 0xffb4b4b4;// floor
-					if (k == 0) tex_pixels[65062] = 0xffb4b4b4;// floor
-					if (k == 0) tex_pixels[65063] = 0xffb4b4b4;// floor
-
-					if (k == 0) tex_pixels[32000 + var_shift] = 0xff202050;// floor
-					if (k == 0) tex_pixels[32001 + var_shift] = 0xff202050;// floor
-					if (k == 0) tex_pixels[32002 + var_shift] = 0xff202050;// floor
-					if (k == 0) tex_pixels[32003 + var_shift] = 0xff202050;// floor
-					if (k == 0) tex_pixels[32004 + var_shift] = 0xff202050;// floor
-					if (k == 0) tex_pixels[32005 + var_shift] = 0xff202050;// floor
-					if (k == 0) tex_pixels[32006 + var_shift] = 0xff202050;// floor
-					if (k == 0) tex_pixels[32007 + var_shift] = 0xff202050;// floor
-					if (k == 0) tex_pixels[32008 + var_shift] = 0xff202050;// floor
-					*/
-
-                    if (k == 1) tex_pixels[j * 256 + i] = (((j / 4 & 15) == 0) || (((i / 4 & 15) == 0) && ((((i / 4 & 31) == 0) ^ ((j / 4 >> 4) & 1)) == 0)))
-                        ? 0xff3c3c3c : 0xffb4b4b4;// wall
-                    if (k == 2) tex_pixels[j * 256 + i] = (i / 4 == 0 || j / 4 == 0) ? 0xff505050 : 0xffb4b4b4;// ceiling
-                    if (k == 3) tex_pixels[j * 256 + i] = 0xffffffff;// blank
-                }
-            }
-            TextureBuffer * generated_texture = new TextureBuffer(nullptr, false, false, Sizei(256, 256), 4, (unsigned char *)tex_pixels, 1);
-            grid_material[k] = new ShaderFill(vshader, fshader, generated_texture);
+				tex_pixels[j * 256 + i] = 0x1500ffaf; // removes the "fill" color of the screen
+			}
         }
 
+		// draw diagonal line
+		/*
+		for (int i = 1; i < diag_length; i++){
+			tex_pixels[i * 256 + i] = 0xffb4b4b4;
+		}
+		*/
+
+		// (below) draws a square 
+
+		// draw vertical line at origin
+		for (int i = 1; i < vert_length; i++){
+			tex_pixels[i * 256] = 0xffb4b4b4;
+		}
+
+		// draw vertical line at horz_length
+		for (int i = 1; i < vert_length; i++){
+			tex_pixels[i * 256 + horz_length] = 0xffb4b4b4;
+		}
+
+		//draw horizontal line at origin
+		for (int i = 1; i < horz_length; i++){
+			tex_pixels[i] = 0xffb4b4b4;
+		}
+
+		//draw horizontal line at vert_length
+		for (int i = 1; i < horz_length; i++){
+			tex_pixels[vert_length*256+i] = 0xffb4b4b4;
+		}
+
+
+        TextureBuffer * generated_texture = new TextureBuffer(nullptr, false, false, Sizei(256, 256), 4, (unsigned char *)tex_pixels, 1);
+        grid_material[0] = new ShaderFill(vshader, fshader, generated_texture);
+      
         glDeleteShader(vshader);
         glDeleteShader(fshader);
 
         // Construct geometry
-		/*
-		Model * m = new Model(Vector3f(0, 0, 0), grid_material[2]);  // Moving box
-        m->AddSolidColorBox(0, 0, 0, +1.0f, +1.0f, 1.0f, 0xff404040);
-        m->AllocateBuffers();
-        Add(m);
-		*/
-
-        Model * m = new Model(Vector3f(0, 0, 0), grid_material[0]);  // Walls
-        m->AddSolidColorBox(-1.0f, 0.5f, -3.0f, 1.0f, 1.5f, -3.0f, 0xff808080); // Left Wall (actually the right wall relative to user)
+        Model * m = new Model(Vector3f(0, 0, 0), grid_material[0]);  // Screen that we display webcam data on
+        m->AddSolidColorBox(-1.0f, 0.0f, -3.0f, 2.0f, 2.0f, -3.0f, 0xff808080); 
 		// x controls how left/right it is. more negative = more right (relative to user)
 		// y controls how the height of the wall
 		// z controls how far it reaches away from us. more negative = closer to user
-		 
-        //m->AddSolidColorBox(-10.0f, -0.1f, -20.1f, 10.0f, 4.0f, -20.0f, 0xff808080); // Back Wall
-        //m->AddSolidColorBox(10.0f, -0.1f, -20.0f, 10.1f, 4.0f, 20.0f, 0xff808080); // Right Wall
-        m->AllocateBuffers();
-        Add(m);
-
-		/*
-		if (includeIntensiveGPUobject) // changed project properties from error level 4 to error level 3 or else giving me an warning treated as error.
-        {
-			
-            m = new Model(Vector3f(0, 0, 0), grid_material[0]);  // Floors
-            for (float depth = 0.0f; depth > -3.0f; depth -= 0.1f)
-                m->AddSolidColorBox(9.0f, 0.5f, -depth, -9.0f, 3.5f, -depth, 0x10ff80ff); // Partition
-            m->AllocateBuffers();
-            Add(m);
-			
-        }*/
-		
-        //m = new Model(Vector3f(0, 0, 0), grid_material[0]);  // Floors
-		//m->AddSolidColorBox(-10.0f, -0.1f, -20.0f, 10.0f, 0.0f, 20.1f, 0x1500ffff); // Main floor
-        //m->AddSolidColorBox(-15.0f, -6.1f, 18.0f, 15.0f, -6.0f, 30.0f, 0xff808080); // Bottom floor
-        //m->AllocateBuffers();
-        //Add(m);
-
-		/*
-        m = new Model(Vector3f(0, 0, 0), grid_material[2]);  // Ceiling
-        m->AddSolidColorBox(-10.0f, 4.0f, -20.0f, 10.0f, 4.1f, 20.1f, 0xff808080);
-        m->AllocateBuffers();
-        Add(m);
-
-        m = new Model(Vector3f(0, 0, 0), grid_material[3]);  // Fixtures & furniture
-        m->AddSolidColorBox(9.5f, 0.75f, 3.0f, 10.1f, 2.5f, 3.1f, 0xff383838);   // Right side shelf// Verticals
-        m->AddSolidColorBox(9.5f, 0.95f, 3.7f, 10.1f, 2.75f, 3.8f, 0xff383838);   // Right side shelf
-        m->AddSolidColorBox(9.55f, 1.20f, 2.5f, 10.1f, 1.30f, 3.75f, 0xff383838); // Right side shelf// Horizontals
-        m->AddSolidColorBox(9.55f, 2.00f, 3.05f, 10.1f, 2.10f, 4.2f, 0xff383838); // Right side shelf
-        m->AddSolidColorBox(5.0f, 1.1f, 20.0f, 10.0f, 1.2f, 20.1f, 0xff383838);   // Right railing   
-        m->AddSolidColorBox(-10.0f, 1.1f, 20.0f, -5.0f, 1.2f, 20.1f, 0xff383838);   // Left railing  
-        for (float f = 5.0f; f <= 9.0f; f += 1.0f)
-        {
-            m->AddSolidColorBox(f, 0.0f, 20.0f, f + 0.1f, 1.1f, 20.1f, 0xff505050);// Left Bars
-            m->AddSolidColorBox(-f, 1.1f, 20.0f, -f - 0.1f, 0.0f, 20.1f, 0xff505050);// Right Bars
-        }
-        m->AddSolidColorBox(-1.8f, 0.8f, 1.0f, 0.0f, 0.7f, 0.0f, 0xff505000); // Table
-        m->AddSolidColorBox(-1.8f, 0.0f, 0.0f, -1.7f, 0.7f, 0.1f, 0xff505000); // Table Leg 
-        m->AddSolidColorBox(-1.8f, 0.7f, 1.0f, -1.7f, 0.0f, 0.9f, 0xff505000); // Table Leg 
-        m->AddSolidColorBox(0.0f, 0.0f, 1.0f, -0.1f, 0.7f, 0.9f, 0xff505000); // Table Leg 
-        m->AddSolidColorBox(0.0f, 0.7f, 0.0f, -0.1f, 0.0f, 0.1f, 0xff505000); // Table Leg 
-        m->AddSolidColorBox(-1.4f, 0.5f, -1.1f, -0.8f, 0.55f, -0.5f, 0xff202050); // Chair Set
-        m->AddSolidColorBox(-1.4f, 0.0f, -1.1f, -1.34f, 1.0f, -1.04f, 0xff202050); // Chair Leg 1
-        m->AddSolidColorBox(-1.4f, 0.5f, -0.5f, -1.34f, 0.0f, -0.56f, 0xff202050); // Chair Leg 2
-        m->AddSolidColorBox(-0.8f, 0.0f, -0.5f, -0.86f, 0.5f, -0.56f, 0xff202050); // Chair Leg 2
-        m->AddSolidColorBox(-0.8f, 1.0f, -1.1f, -0.86f, 0.0f, -1.04f, 0xff202050); // Chair Leg 2
-        m->AddSolidColorBox(-1.4f, 0.97f, -1.05f, -0.8f, 0.92f, -1.10f, 0xff202050); // Chair Back high bar
-
-        for (float f = 3.0f; f <= 6.6f; f += 0.4f)
-            m->AddSolidColorBox(-3, 0.0f, f, -2.9f, 1.3f, f + 0.1f, 0xff404040); // Posts
 
         m->AllocateBuffers();
         Add(m);
-		*/
     }
 
     Scene() : numModels(0) {}
