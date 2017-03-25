@@ -640,7 +640,7 @@ struct Model
         delete indexBuffer; indexBuffer = nullptr;
     }
 
-    void AddSolidColorBox(float x1, float y1, float z1, float x2, float y2, float z2, DWORD c)
+    void AddSolidColorBox(float x1, float y1, float z1, float x2, float y2, float z2, DWORD c) // c = color
     {
         Vector3f Vert[][2] =
         {
@@ -731,6 +731,7 @@ struct Model
 };
 
 //------------------------------------------------------------------------- 
+/*
 struct Scene
 {
     int     numModels;
@@ -746,8 +747,6 @@ struct Scene
         for (int i = 0; i < numModels; ++i)
             Models[i]->Render(view, proj);
     }
-
-	// USER DEFINED FUNCTIONS
 
     GLuint CreateShader(GLenum type, const GLchar* src)
     {
@@ -771,7 +770,6 @@ struct Scene
         return shader;
     }
 
-	
     void Init(int includeIntensiveGPUobject)
     {
         static const GLchar* VertexShaderSrc =
@@ -806,8 +804,8 @@ struct Scene
 
 		// temporary variables, before transforming into function parameters
 		int diag_length = 256;
-		int vert_length = 50;
-		int horz_length = 50;
+		int vert_length = 256;
+		int horz_length = 256;
 
         // Make textures
         ShaderFill * grid_material[1];
@@ -818,16 +816,17 @@ struct Scene
         {
 			for (int i = 0; i < 256; ++i)
             {
-				tex_pixels[j * 256 + i] = 0x1500ffaf; // removes the "fill" color of the screen
+				tex_pixels[j * 256 + i] = 0xff500050; // color is aarrggbb format
+											// 500050 = purple
 			}
         }
 
 		// draw diagonal line
-		/*
+		
 		for (int i = 1; i < diag_length; i++){
 			tex_pixels[i * 256 + i] = 0xffb4b4b4;
 		}
-		*/
+		
 
 		// (below) draws a square 
 
@@ -851,7 +850,6 @@ struct Scene
 			tex_pixels[vert_length*256+i] = 0xffb4b4b4;
 		}
 
-
         TextureBuffer * generated_texture = new TextureBuffer(nullptr, false, false, Sizei(256, 256), 4, (unsigned char *)tex_pixels, 1);
         grid_material[0] = new ShaderFill(vshader, fshader, generated_texture);
       
@@ -860,7 +858,7 @@ struct Scene
 
         // Construct geometry
         Model * m = new Model(Vector3f(0, 0, 0), grid_material[0]);  // Screen that we display webcam data on
-        m->AddSolidColorBox(-1.0f, 0.0f, -3.0f, 2.0f, 2.0f, -3.0f, 0xff808080); 
+        m->AddSolidColorBox(-0.25f, 0.75f, -3.0f, 0.25f, 1.25f, -3.0f, 0xff808080); 
 		// x controls how left/right it is. more negative = more right (relative to user)
 		// y controls how the height of the wall
 		// z controls how far it reaches away from us. more negative = closer to user
@@ -884,4 +882,4 @@ struct Scene
     {
         Release();
     }
-};
+}; */
