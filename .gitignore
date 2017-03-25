@@ -1,0 +1,11 @@
+*.vcxproj
+*.filters
+*Debug/
+*Lib/
+*Release/
+*Include/GL
+*Include/GLFW
+*Include/opencv
+*Include/opencv2
+*Include/SDL2
+
