@@ -105,39 +105,40 @@ struct Scene
 
 		// temporary variables, before transforming into function parameters
 		int diag_length = 256;
-		int vert_length = 256;
-		int horz_length = 256;
+		int vert_length = 480;
+		int horz_length = 640;
 
 		// Make textures
 		ShaderFill * grid_material[1];
 
 		// fill screen
-		static DWORD tex_pixels[256 * 256]; // tex_pixels is the only thing we want to modify dynamically
-		for (int j = 0; j < 256; ++j)
+		static DWORD tex_pixels[640 * 480]; // tex_pixels is the only thing we want to modify dynamically
+		for (int j = 0; j < 480; ++j)
 		{
-			for (int i = 0; i < 256; ++i)
+			for (int i = 0; i < 640; ++i)
 			{
-				tex_pixels[j * 256 + i] = 0xff500050; // color is aarrggbb format
+				tex_pixels[j * 640 + i] = 0xff500050; // color is aarrggbb format
 				// 500050 = purple
 			}
 		}
 
+		/*
 		// draw diagonal line
-
 		for (int i = 1; i < diag_length; i++){
 			tex_pixels[i * 256 + i] = 0xffb4b4b4;
 		}
+		*/
 
 		// (below) draws a square 
 
 		// draw vertical line at origin
 		for (int i = 1; i < vert_length; i++){
-			tex_pixels[i * 256] = 0xffb4b4b4;
+			tex_pixels[i * 640] = 0xffb4b4b4;
 		}
 
 		// draw vertical line at horz_length
 		for (int i = 1; i < vert_length; i++){
-			tex_pixels[i * 256 + horz_length] = 0xffb4b4b4;
+			tex_pixels[i * 640 + horz_length] = 0xffb4b4b4;
 		}
 
 		//draw horizontal line at origin
@@ -147,18 +148,19 @@ struct Scene
 
 		//draw horizontal line at vert_length
 		for (int i = 1; i < horz_length; i++){
-			tex_pixels[vert_length * 256 + i] = 0xffb4b4b4;
+			tex_pixels[vert_length * 640 + i] = 0xffb4b4b4;
 		}
 
-		TextureBuffer * generated_texture = new TextureBuffer(nullptr, false, false, Sizei(256, 256), 4, (unsigned char *)tex_pixels, 1);
+		TextureBuffer * generated_texture = new TextureBuffer(nullptr, false, false, Sizei(480, 640), 4, (unsigned char *)tex_pixels, 1);
 		grid_material[0] = new ShaderFill(vshader, fshader, generated_texture);
+	
 
 		glDeleteShader(vshader);
 		glDeleteShader(fshader);
 
 		// Construct geometry
 		Model * m = new Model(Vector3f(0, 0, 0), grid_material[0]);  // Screen that we display webcam data on
-		m->AddSolidColorBox(-0.25f, 0.75f, -3.0f, 0.25f, 1.25f, -3.0f, 0xff808080);
+		m->AddSolidColorBox(-0.25f, 0.75f, -3.0f, 0.25f, 1.25f, -3.0f, 0x00808080);
 		// x controls how left/right it is. more negative = more right (relative to user)
 		// y controls how the height of the wall
 		// z controls how far it reaches away from us. more negative = closer to user
