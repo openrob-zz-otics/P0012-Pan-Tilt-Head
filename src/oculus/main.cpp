@@ -52,7 +52,6 @@ struct Scene
 
 	void Render(Matrix4f view, Matrix4f proj)
 	{
-
 		static const GLchar* VertexShaderSrc =
 			"#version 150\n"
 			"uniform mat4 matWVP;\n"
@@ -83,21 +82,12 @@ struct Scene
 		GLuint    vshader = CreateShader(GL_VERTEX_SHADER, VertexShaderSrc);
 		GLuint    fshader = CreateShader(GL_FRAGMENT_SHADER, FragmentShaderSrc);
 
-		// temporary variables, before transforming into function parameters
-		int diag_length = 256;
-		int vert_length = 480;
-		int horz_length = 640;
-
 		// Make textures
 		ShaderFill * grid_material[1];
-
-		for (int i = 0; i < numModels; ++i)
-			Models[i]->Render(view, proj);
-
+		
 		cv::Mat frame;
-
 		cv::VideoCapture capture(CV_CAP_ANY);
-
+		/*
 		if (!capture.isOpened())
 		{
 			cout << "Can not open a capture object." << endl;
@@ -115,24 +105,17 @@ struct Scene
 		{
 			cv::flip(frame, frame, 0);
 		}
-
+		
 		TextureBuffer * generated_texture = new TextureBuffer(nullptr, false, false, Sizei(640, 480), 4, (unsigned char *)frame.ptr(), 1);
 		grid_material[0] = new ShaderFill(vshader, fshader, generated_texture);
-
+		*/
 
 		glDeleteShader(vshader);
 		glDeleteShader(fshader);
-
-		delete Models[0];
-		//Construct geometry
-		Model * m = new Model(Vector3f(0, 0, 0), grid_material[0]);  // Screen that we display webcam data on
-		m->AddSolidColorBox(-0.75f, 0.0f, -4.0f, 0.75f, 2.0f, -4.0f, 0x00808080);
-		// x controls how left/right it is. more negative = more right (relative to user)
-		// y controls how the height of the wall
-		// z controls how far it reaches away from us. more negative = closer to user
-
-		m->AllocateBuffers();
-		Add(m);
+		for (int i = 0; i < numModels; ++i){
+			Models[i]->Render(view, proj);
+			//Models[i]->Fill = grid_material[0];
+		}
 	}
 
 	GLuint CreateShader(GLenum type, const GLchar* src)
@@ -189,67 +172,15 @@ struct Scene
 		GLuint    vshader = CreateShader(GL_VERTEX_SHADER, VertexShaderSrc);
 		GLuint    fshader = CreateShader(GL_FRAGMENT_SHADER, FragmentShaderSrc);
 
-		// temporary variables, before transforming into function parameters
-		int diag_length = 256;
-		int vert_length = 480;
-		int horz_length = 640;
-
 		// Make textures
 		ShaderFill * grid_material[1];
 
-		// fill screen
-		//		static DWORD tex_pixels[640 * 480]; // tex_pixels is the only thing we want to modify dynamically
-		//		for (int j = 0; j < 480; ++j)
-		//		{
-		//			for (int i = 0; i < 640; ++i)
-		//			{
-		//				tex_pixels[j * 640 + i] = 0xff500050; // color is aarrggbb format
-		//				// 500050 = purple
-		//			}
-		//		}
-		//
-		//		/*
-		//		// draw diagonal line
-		//		for (int i = 1; i < diag_length; i++){
-		//			tex_pixels[i * 256 + i] = 0xffb4b4b4;
-		//		}
-		//		*/
-		//
-		//		// (below) draws a square 
-		//
-		//		// draw vertical line at origin
-		//		for (int i = 1; i < vert_length; i++){
-		//			tex_pixels[i * 640] = 0xffb4b4b4;
-		//		}
-		//
-		//		// draw vertical line at horz_length
-		//		for (int i = 1; i < vert_length; i++){
-		//			tex_pixels[i * 640 + horz_length] = 0xffb4b4b4;
-		//		}
-		//
-		//		//draw horizontal line at origin
-		//		for (int i = 1; i < horz_length; i++){
-		//			tex_pixels[i] = 0xffb4b4b4;
-		//		}
-		//
-		//		//draw horizontal line at vert_length
-		//		for (int i = 1; i < horz_length; i++){
-		//			tex_pixels[vert_length * 640 + i] = 0xffb4b4b4;
-		//		}
-		//
 		cv::Mat frame;
-
 		cv::VideoCapture capture(CV_CAP_ANY);
 
 		if (!capture.isOpened())
-		{
-			cout << "Can not open a capture object." << endl;
+		{	
 			exit(-1);
-		}
-
-		if (!capture.grab())
-		{
-			cout << "Could not grab camera... Skipping frame." << endl;
 		}
 
 		capture.retrieve(frame, CV_CAP_OPENNI_BGR_IMAGE);
@@ -257,18 +188,18 @@ struct Scene
 		if (!frame.empty())
 		{
 			cv::flip(frame, frame, 0);
+			Sleep(250);
 		}
-
+		
 		TextureBuffer * generated_texture = new TextureBuffer(nullptr, false, false, Sizei(640, 480), 4, (unsigned char *)frame.ptr(), 1);
 		grid_material[0] = new ShaderFill(vshader, fshader, generated_texture);
-
 
 		glDeleteShader(vshader);
 		glDeleteShader(fshader);
 
 		// Construct geometry
 		Model * m = new Model(Vector3f(0, 0, 0), grid_material[0]);  // Screen that we display webcam data on
-		m->AddSolidColorBox(-0.75f, 0.0f, -4.0f, 0.75f, 2.0f, -4.0f, 0x00808080);
+		m->AddSolidColorBox(-0.5f, 0.5f, -4.0f, 0.5f, 1.5f, -4.0f, 0x00808080);
 		// x controls how left/right it is. more negative = more right (relative to user)
 		// y controls how the height of the wall
 		// z controls how far it reaches away from us. more negative = closer to user

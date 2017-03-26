@@ -22,8 +22,6 @@
 #include "OVR_CAPI_GL.h"
 
 //#include <assert.h>
-
-
 using namespace OVR;
 
 #ifndef VALIDATE
@@ -33,7 +31,6 @@ using namespace OVR;
 #ifndef OVR_DEBUG_LOG
     #define OVR_DEBUG_LOG(x)
 #endif
-
 
 //---------------------------------------------------------------------------------------
 struct DepthBuffer
@@ -697,6 +694,34 @@ struct Model
     {
         Matrix4f combined = proj * view * GetMatrix();
 
+		/*
+		OVR::Sizei size = Fill->texture->GetSize();
+		
+		glBindTexture(GL_TEXTURE_2D, Fill->texture->texId);
+
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glLoadIdentity();
+
+		glEnable(GL_TEXTURE_2D);
+
+		// Actually draw the texture to our buffer
+		glBindTexture(GL_TEXTURE_2D, Fill->texture->texId);
+		glBegin(GL_QUADS);
+		glTexCoord2f(1, 1);
+		glVertex3f(0, 0, 0);
+		glTexCoord2f(0, 1);
+		glVertex3f(size.w, 0, 0);
+		glTexCoord2f(0, 0);
+		glVertex3f(size.w, size.h, 0);
+		glTexCoord2f(1, 0);
+		glVertex3f(0, size.h, 0);
+		glEnd();
+
+		//glDeleteTextures(1, &tex);
+		glDisable(GL_TEXTURE_2D);
+		SwapBuffers(Platform.hDC);
+		*/
+		
         glUseProgram(Fill->program);
         glUniform1i(glGetUniformLocation(Fill->program, "Texture0"), 0);
         glUniformMatrix4fv(glGetUniformLocation(Fill->program, "matWVP"), 1, GL_TRUE, (FLOAT*)&combined);
@@ -729,159 +754,7 @@ struct Model
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
         glUseProgram(0);
+		
     }
 };
 
-//------------------------------------------------------------------------- 
-/*
-struct Scene
-{
-    int     numModels;
-    Model * Models[1];
-
-    void    Add(Model * n)
-    {
-        Models[numModels++] = n;
-    }
-
-    void Render(Matrix4f view, Matrix4f proj)
-    {
-        for (int i = 0; i < numModels; ++i)
-            Models[i]->Render(view, proj);
-    }
-
-    GLuint CreateShader(GLenum type, const GLchar* src)
-    {
-        GLuint shader = glCreateShader(type);
-
-        glShaderSource(shader, 1, &src, NULL);
-        glCompileShader(shader);
-
-        GLint r;
-        glGetShaderiv(shader, GL_COMPILE_STATUS, &r);
-        if (!r)
-        {
-            GLchar msg[1024];
-            glGetShaderInfoLog(shader, sizeof(msg), 0, msg);
-            if (msg[0]) {
-                OVR_DEBUG_LOG(("Compiling shader failed: %s\n", msg));
-            }
-            return 0;
-        }
-
-        return shader;
-    }
-
-    void Init(int includeIntensiveGPUobject)
-    {
-        static const GLchar* VertexShaderSrc =
-            "#version 150\n"
-            "uniform mat4 matWVP;\n"
-            "in      vec4 Position;\n"
-            "in      vec4 Color;\n"
-            "in      vec2 TexCoord;\n"
-            "out     vec2 oTexCoord;\n"
-            "out     vec4 oColor;\n"
-            "void main()\n"
-            "{\n"
-            "   gl_Position = (matWVP * Position);\n"
-            "   oTexCoord   = TexCoord;\n"
-            "   oColor.rgb  = pow(Color.rgb, vec3(2.2));\n"   // convert from sRGB to linear
-            "   oColor.a    = Color.a;\n"
-            "}\n";
-
-        static const char* FragmentShaderSrc =
-            "#version 150\n"
-            "uniform sampler2D Texture0;\n"
-            "in      vec4      oColor;\n"
-            "in      vec2      oTexCoord;\n"
-            "out     vec4      FragColor;\n"
-            "void main()\n"
-            "{\n"
-            "   FragColor = oColor * texture2D(Texture0, oTexCoord);\n"
-            "}\n";
-
-        GLuint    vshader = CreateShader(GL_VERTEX_SHADER, VertexShaderSrc);
-        GLuint    fshader = CreateShader(GL_FRAGMENT_SHADER, FragmentShaderSrc);
-
-		// temporary variables, before transforming into function parameters
-		int diag_length = 256;
-		int vert_length = 256;
-		int horz_length = 256;
-
-        // Make textures
-        ShaderFill * grid_material[1];
-
-		// fill screen
-		static DWORD tex_pixels[256 * 256];
-        for (int j = 0; j < 256; ++j)
-        {
-			for (int i = 0; i < 256; ++i)
-            {
-				tex_pixels[j * 256 + i] = 0xff500050; // color is aarrggbb format
-											// 500050 = purple
-			}
-        }
-
-		// draw diagonal line
-		
-		for (int i = 1; i < diag_length; i++){
-			tex_pixels[i * 256 + i] = 0xffb4b4b4;
-		}
-		
-
-		// (below) draws a square 
-
-		// draw vertical line at origin
-		for (int i = 1; i < vert_length; i++){
-			tex_pixels[i * 256] = 0xffb4b4b4;
-		}
-
-		// draw vertical line at horz_length
-		for (int i = 1; i < vert_length; i++){
-			tex_pixels[i * 256 + horz_length] = 0xffb4b4b4;
-		}
-
-		//draw horizontal line at origin
-		for (int i = 1; i < horz_length; i++){
-			tex_pixels[i] = 0xffb4b4b4;
-		}
-
-		//draw horizontal line at vert_length
-		for (int i = 1; i < horz_length; i++){
-			tex_pixels[vert_length*256+i] = 0xffb4b4b4;
-		}
-
-        TextureBuffer * generated_texture = new TextureBuffer(nullptr, false, false, Sizei(256, 256), 4, (unsigned char *)tex_pixels, 1);
-        grid_material[0] = new ShaderFill(vshader, fshader, generated_texture);
-      
-        glDeleteShader(vshader);
-        glDeleteShader(fshader);
-
-        // Construct geometry
-        Model * m = new Model(Vector3f(0, 0, 0), grid_material[0]);  // Screen that we display webcam data on
-        m->AddSolidColorBox(-0.25f, 0.75f, -3.0f, 0.25f, 1.25f, -3.0f, 0xff808080); 
-		// x controls how left/right it is. more negative = more right (relative to user)
-		// y controls how the height of the wall
-		// z controls how far it reaches away from us. more negative = closer to user
-
-        m->AllocateBuffers();
-        Add(m);
-    }
-
-    Scene() : numModels(0) {}
-    Scene(bool includeIntensiveGPUobject) :
-        numModels(0)
-    {
-        Init(includeIntensiveGPUobject);
-    }
-    void Release()
-    {
-        while (numModels-- > 0)
-            delete Models[numModels];
-    }
-    ~Scene()
-    {
-        Release();
-    }
-}; */
