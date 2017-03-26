@@ -20,7 +20,8 @@
 #include "GL/CAPI_GLE.h"
 #include "Extras/OVR_Math.h"
 #include "OVR_CAPI_GL.h"
-#include <assert.h>
+
+//#include <assert.h>
 
 
 using namespace OVR;
@@ -159,8 +160,9 @@ struct TextureBuffer
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
             }
-
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, texSize.w, texSize.h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+			
+            //glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, texSize.w, texSize.h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, texSize.w, texSize.h, 0, GL_BGR, GL_UNSIGNED_BYTE, data);
         }
 
         if (mipLevels > 1)
